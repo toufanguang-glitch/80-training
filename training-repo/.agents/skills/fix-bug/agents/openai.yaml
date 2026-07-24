@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fix Bug"
+  short_description: "Diagnose and fix OrderHub bugs safely"
+  default_prompt: "Use $fix-bug to diagnose and safely fix this OrderHub bug."
