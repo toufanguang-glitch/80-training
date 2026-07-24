@@ -8,10 +8,6 @@ public class OrderServiceQueryTests
     {
         yield return new object[] { OrderSortField.Id, SortDirection.Ascending, 1 };
         yield return new object[] { OrderSortField.Id, SortDirection.Descending, 2 };
-        yield return new object[] { OrderSortField.Customer, SortDirection.Ascending, 2 };
-        yield return new object[] { OrderSortField.Customer, SortDirection.Descending, 1 };
-        yield return new object[] { OrderSortField.Status, SortDirection.Ascending, 2 };
-        yield return new object[] { OrderSortField.Status, SortDirection.Descending, 1 };
         yield return new object[] { OrderSortField.Total, SortDirection.Ascending, 1 };
         yield return new object[] { OrderSortField.Total, SortDirection.Descending, 2 };
         yield return new object[] { OrderSortField.ItemCount, SortDirection.Ascending, 1 };
@@ -59,6 +55,56 @@ public class OrderServiceQueryTests
         var result = await service.GetOrdersAsync(1, 20, null, sort, direction);
 
         Assert.Equal(expectedFirstOrderId, result.Items.First().Id);
+    }
+
+    [Theory]
+    [InlineData("Customer", 2)]
+    [InlineData("Status", 3)]
+    public async Task GetOrders_WithRemovedSortField_DoesNotMapToASupportedSort(
+        string removedSortName,
+        int removedSortValue)
+    {
+        Assert.False(Enum.TryParse<OrderSortField>(removedSortName, out _));
+        Assert.False(Enum.IsDefined((OrderSortField)removedSortValue));
+
+        using var db = TestSetup.CreateContext();
+        var service = TestSetup.CreateOrderService(db);
+        var customer = TestSetup.AddCustomer(db);
+        var createdAt = DateTime.UtcNow;
+
+        db.Orders.AddRange(
+            new Order
+            {
+                Id = 1,
+                CustomerId = customer.Id,
+                Status = OrderStatus.Pending,
+                CreatedAt = createdAt.AddMinutes(-1),
+                Items =
+                {
+                    new OrderItem { ProductId = 1, Quantity = 2, UnitPriceSnapshot = 50m }
+                }
+            },
+            new Order
+            {
+                Id = 2,
+                CustomerId = customer.Id,
+                Status = OrderStatus.Shipped,
+                CreatedAt = createdAt,
+                Items =
+                {
+                    new OrderItem { ProductId = 1, Quantity = 1, UnitPriceSnapshot = 10m }
+                }
+            });
+        db.SaveChanges();
+
+        var result = await service.GetOrdersAsync(
+            1,
+            20,
+            null,
+            (OrderSortField)removedSortValue,
+            SortDirection.Descending);
+
+        Assert.Equal(2, result.Items.First().Id);
     }
 
     [Fact]

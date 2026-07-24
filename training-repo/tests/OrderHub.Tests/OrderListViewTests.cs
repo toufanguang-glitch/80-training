@@ -11,13 +11,15 @@ public class OrderListViewTests
         var viewPath = Path.Combine(repositoryRoot, "src", "OrderHub.Web", "Views", "Orders", "Index.cshtml");
         var markup = File.ReadAllText(viewPath);
 
-        Assert.Equal(6, Regex.Matches(markup, @"@\(SortIndicator\(").Count);
+        Assert.Equal(4, Regex.Matches(markup, @"@\(SortIndicator\(").Count);
         Assert.DoesNotContain("編號@SortIndicator", markup);
-        Assert.DoesNotContain("客戶@SortIndicator", markup);
-        Assert.DoesNotContain("狀態@SortIndicator", markup);
         Assert.DoesNotContain("金額@SortIndicator", markup);
         Assert.DoesNotContain("品項數@SortIndicator", markup);
         Assert.DoesNotContain("建立時間@SortIndicator", markup);
+        Assert.Contains("<th>客戶</th>", markup);
+        Assert.Contains("<th>狀態</th>", markup);
+        Assert.DoesNotContain("OrderSortField.Customer", markup);
+        Assert.DoesNotContain("OrderSortField.Status", markup);
     }
 
     private static string FindRepositoryRoot()

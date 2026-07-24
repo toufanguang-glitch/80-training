@@ -36,10 +36,6 @@ public class OrderRepository : IOrderRepository
         {
             (OrderSortField.Id, SortDirection.Ascending) => query.OrderBy(o => o.Id),
             (OrderSortField.Id, SortDirection.Descending) => query.OrderByDescending(o => o.Id),
-            (OrderSortField.Customer, SortDirection.Ascending) => query.OrderBy(o => o.Customer!.Name),
-            (OrderSortField.Customer, SortDirection.Descending) => query.OrderByDescending(o => o.Customer!.Name),
-            (OrderSortField.Status, SortDirection.Ascending) => query.OrderBy(o => o.Status),
-            (OrderSortField.Status, SortDirection.Descending) => query.OrderByDescending(o => o.Status),
             (OrderSortField.Total, SortDirection.Ascending) => query.OrderBy(o => o.Items.Sum(i => i.UnitPriceSnapshot * i.Quantity)),
             (OrderSortField.Total, SortDirection.Descending) => query.OrderByDescending(o => o.Items.Sum(i => i.UnitPriceSnapshot * i.Quantity)),
             (OrderSortField.ItemCount, SortDirection.Ascending) => query.OrderBy(o => o.Items.Count),

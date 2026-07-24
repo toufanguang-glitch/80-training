@@ -52,8 +52,8 @@
     <thead>
         <tr>
             <th><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.Id)">編號@(SortIndicator(OrderSortField.Id))</a></th>
-            <th><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.Customer)">客戶@(SortIndicator(OrderSortField.Customer))</a></th>
-            <th><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.Status)">狀態@(SortIndicator(OrderSortField.Status))</a></th>
+            <th>客戶</th>
+            <th>狀態</th>
             <th class="text-end"><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.Total)">金額@(SortIndicator(OrderSortField.Total))</a></th>
             <th class="text-end"><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.ItemCount)">品項數@(SortIndicator(OrderSortField.ItemCount))</a></th>
             <th><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.CreatedAt)">建立時間@(SortIndicator(OrderSortField.CreatedAt))</a></th>
