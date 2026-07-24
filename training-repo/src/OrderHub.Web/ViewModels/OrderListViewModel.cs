@@ -10,4 +10,6 @@ public class OrderListViewModel
     public int TotalCount { get; set; }
     public int TotalPages { get; set; }
     public OrderStatus? Status { get; set; }
+    public OrderSortField Sort { get; set; } = OrderSortField.CreatedAt;
+    public SortDirection Direction { get; set; } = SortDirection.Descending;
 }

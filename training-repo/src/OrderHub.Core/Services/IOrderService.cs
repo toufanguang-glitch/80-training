@@ -5,7 +5,12 @@ namespace OrderHub.Core.Services;
 
 public interface IOrderService
 {
-    Task<PagedResult<Order>> GetOrdersAsync(int page, int pageSize, OrderStatus? status);
+    Task<PagedResult<Order>> GetOrdersAsync(
+        int page,
+        int pageSize,
+        OrderStatus? status,
+        OrderSortField sort = OrderSortField.CreatedAt,
+        SortDirection direction = SortDirection.Descending);
     Task<Order?> GetOrderAsync(int id);
     Task<IReadOnlyList<Order>> GetCustomerOrdersAsync(int customerId);
     Task<ServiceResult<Order>> CreateOrderAsync(int customerId, IReadOnlyList<NewOrderLine> lines);

@@ -3,32 +3,41 @@
     ViewData["Title"] = "訂單列表";
 }
 
+@functions {
+    private Dictionary<string, string?> SortRoute(OrderSortField sort)
+    {
+        var direction = Model.Sort == sort && Model.Direction == SortDirection.Descending
+            ? SortDirection.Ascending
+            : SortDirection.Descending;
+
+        return new Dictionary<string, string?>
+        {
+            ["page"] = "1",
+            ["status"] = Model.Status?.ToString(),
+            ["sort"] = sort.ToString(),
+            ["direction"] = direction.ToString()
+        };
+    }
+
+    private string SortIndicator(OrderSortField sort) => Model.Sort == sort
+        ? Model.Direction == SortDirection.Ascending ? " ▲" : " ▼"
+        : string.Empty;
+}
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">訂單列表</h1>
     <a class="btn btn-primary" asp-action="Create">建立訂單</a>
 </div>
 
 <form method="get" class="row g-2 mb-3">
+    <input type="hidden" name="sort" value="@Model.Sort" />
+    <input type="hidden" name="direction" value="@Model.Direction" />
     <div class="col-auto">
         <select name="status" class="form-select" onchange="this.form.submit()">
-            @if (Model.Status is null)
-            {
-                <option value="" selected>全部狀態</option>
-            }
-            else
-            {
-                <option value="">全部狀態</option>
-            }
+            <option value="" selected="@(Model.Status is null)">全部狀態</option>
             @foreach (var status in Enum.GetValues<OrderStatus>())
             {
-                if (Model.Status == status)
-                {
-                    <option value="@status" selected>@StatusLabel(status)</option>
-                }
-                else
-                {
-                    <option value="@status">@StatusLabel(status)</option>
-                }
+                <option value="@status" selected="@(Model.Status == status)">@StatusLabel(status)</option>
             }
         </select>
     </div>
@@ -42,19 +51,19 @@
 <table class="table table-hover align-middle">
     <thead>
         <tr>
-            <th>編號</th>
-            <th>客戶</th>
-            <th>狀態</th>
-            <th class="text-end">金額</th>
-            <th class="text-end">品項數</th>
-            <th>建立時間</th>
+            <th><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.Id)">編號@SortIndicator(OrderSortField.Id)</a></th>
+            <th><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.Customer)">客戶@SortIndicator(OrderSortField.Customer)</a></th>
+            <th><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.Status)">狀態@SortIndicator(OrderSortField.Status)</a></th>
+            <th class="text-end"><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.Total)">金額@SortIndicator(OrderSortField.Total)</a></th>
+            <th class="text-end"><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.ItemCount)">品項數@SortIndicator(OrderSortField.ItemCount)</a></th>
+            <th><a class="link-dark text-decoration-none" asp-action="Index" asp-all-route-data="@SortRoute(OrderSortField.CreatedAt)">建立時間@SortIndicator(OrderSortField.CreatedAt)</a></th>
         </tr>
     </thead>
     <tbody>
         @if (Model.Orders.Count == 0)
         {
             <tr>
-                <td colspan="6" class="text-center text-muted py-4">沒有符合條件的訂單</td>
+                <td colspan="6" class="text-center text-muted py-4">沒有符合條件的訂單。</td>
             </tr>
         }
         @foreach (var order in Model.Orders)
@@ -78,16 +87,16 @@
     <nav aria-label="分頁">
         <ul class="pagination mb-0">
             <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
-                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-status="@Model.Status">上一頁</a>
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-status="@Model.Status" asp-route-sort="@Model.Sort" asp-route-direction="@Model.Direction">上一頁</a>
             </li>
             @for (var p = 1; p <= Model.TotalPages; p++)
             {
                 <li class="page-item @(p == Model.Page ? "active" : "")">
-                    <a class="page-link" asp-action="Index" asp-route-page="@p" asp-route-status="@Model.Status">@p</a>
+                    <a class="page-link" asp-action="Index" asp-route-page="@p" asp-route-status="@Model.Status" asp-route-sort="@Model.Sort" asp-route-direction="@Model.Direction">@p</a>
                 </li>
             }
             <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-status="@Model.Status">下一頁</a>
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-status="@Model.Status" asp-route-sort="@Model.Sort" asp-route-direction="@Model.Direction">下一頁</a>
             </li>
         </ul>
     </nav>

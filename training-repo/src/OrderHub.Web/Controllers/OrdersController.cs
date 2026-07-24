@@ -25,9 +25,13 @@ public class OrdersController : Controller
         _productService = productService;
     }
 
-    public async Task<IActionResult> Index(int page = 1, OrderStatus? status = null)
+    public async Task<IActionResult> Index(
+        int page = 1,
+        OrderStatus? status = null,
+        OrderSortField sort = OrderSortField.CreatedAt,
+        SortDirection direction = SortDirection.Descending)
     {
-        var result = await _orderService.GetOrdersAsync(page, PageSize, status);
+        var result = await _orderService.GetOrdersAsync(page, PageSize, status, sort, direction);
 
         var vm = new OrderListViewModel
         {
@@ -44,7 +48,9 @@ public class OrdersController : Controller
             PageSize = result.PageSize,
             TotalCount = result.TotalCount,
             TotalPages = result.TotalPages,
-            Status = status
+            Status = status,
+            Sort = sort,
+            Direction = direction
         };
 
         return View(vm);

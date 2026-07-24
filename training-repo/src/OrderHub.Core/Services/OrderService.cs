@@ -20,11 +20,16 @@ public class OrderService : IOrderService
         _customerRepository = customerRepository;
     }
 
-    public Task<PagedResult<Order>> GetOrdersAsync(int page, int pageSize, OrderStatus? status)
+    public Task<PagedResult<Order>> GetOrdersAsync(
+        int page,
+        int pageSize,
+        OrderStatus? status,
+        OrderSortField sort = OrderSortField.CreatedAt,
+        SortDirection direction = SortDirection.Descending)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
-        return _orderRepository.GetPagedAsync(page, pageSize, status);
+        return _orderRepository.GetPagedAsync(page, pageSize, status, sort, direction);
     }
 
     public Task<Order?> GetOrderAsync(int id) => _orderRepository.GetWithDetailsAsync(id);

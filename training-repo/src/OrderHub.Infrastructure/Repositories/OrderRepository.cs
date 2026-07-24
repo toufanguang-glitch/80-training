@@ -15,7 +15,12 @@ public class OrderRepository : IOrderRepository
         _db = db;
     }
 
-    public async Task<PagedResult<Order>> GetPagedAsync(int page, int pageSize, OrderStatus? status)
+    public async Task<PagedResult<Order>> GetPagedAsync(
+        int page,
+        int pageSize,
+        OrderStatus? status,
+        OrderSortField sort,
+        SortDirection direction)
     {
         var query = _db.Orders
             .Include(o => o.Customer)
@@ -27,9 +32,24 @@ public class OrderRepository : IOrderRepository
 
         var totalCount = await query.CountAsync();
 
-        var items = await query
-            .OrderByDescending(o => o.CreatedAt)
-            .Skip(page * pageSize)
+        var orderedQuery = (sort, direction) switch
+        {
+            (OrderSortField.Id, SortDirection.Ascending) => query.OrderBy(o => o.Id),
+            (OrderSortField.Id, SortDirection.Descending) => query.OrderByDescending(o => o.Id),
+            (OrderSortField.Customer, SortDirection.Ascending) => query.OrderBy(o => o.Customer!.Name),
+            (OrderSortField.Customer, SortDirection.Descending) => query.OrderByDescending(o => o.Customer!.Name),
+            (OrderSortField.Status, SortDirection.Ascending) => query.OrderBy(o => o.Status),
+            (OrderSortField.Status, SortDirection.Descending) => query.OrderByDescending(o => o.Status),
+            (OrderSortField.Total, SortDirection.Ascending) => query.OrderBy(o => o.Items.Sum(i => i.UnitPriceSnapshot * i.Quantity)),
+            (OrderSortField.Total, SortDirection.Descending) => query.OrderByDescending(o => o.Items.Sum(i => i.UnitPriceSnapshot * i.Quantity)),
+            (OrderSortField.ItemCount, SortDirection.Ascending) => query.OrderBy(o => o.Items.Count),
+            (OrderSortField.ItemCount, SortDirection.Descending) => query.OrderByDescending(o => o.Items.Count),
+            (OrderSortField.CreatedAt, SortDirection.Ascending) => query.OrderBy(o => o.CreatedAt),
+            _ => query.OrderByDescending(o => o.CreatedAt)
+        };
+
+        var items = await orderedQuery
+            .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
