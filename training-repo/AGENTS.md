@@ -34,6 +34,22 @@
 - `src/OrderHub.Infrastructure/Migrations/**`：EF migration 是歷史紀錄，不要手改
 - `src/OrderHub.Web/appsettings.json`：連線字串等設定，改動前先問
 
+## Hooks
+
+- 對可能破壞資料的 SQL 先套用 `.codex/hooks/block-destructive-sql.ps1`。它會拒絕包含 `DROP TABLE` 或 `TRUNCATE` 的命令；不得繞過此保護。
+- `.codex/hooks/log-edits.ps1` 會將檔案編輯記錄到 `.codex/hooks/edit-log.txt`。保留這份稽核紀錄，除非任務明確要求，否則不要修改或刪除它。
+
+## 操作規則
+
+- 永遠禁止 `rm -rf`、`git push --force` 與 `git reset --hard`。
+- 執行 `dotnet ef database drop` 或 `git push` 前，必須先取得使用者明確同意。
+- `dotnet build`、`dotnet test`、`dotnet run`、`git status`、`git diff`、`git log`、`git add` 與 `git commit` 可作為例行本機操作執行。
+
+## 專用代理
+
+- `code-reviewer`：僅讀取變更，依嚴重度檢查分層、ViewModel/驗證、`decimal` 與 `OrderService.CalculateTotal` 的金額規則，以及回歸測試。每項發現應附檔案、行號與具體建議；沒有發現時也要明確說明。
+- `test-runner`：只執行 `dotnet test`，不得修改程式碼。測試通過時回報通過、失敗與略過數；失敗時列出每個失敗測試、斷言訊息及可能原因。
+
 ## 不要做的事
 
 - 不要未經同意就加新的 NuGet 套件
