@@ -88,6 +88,7 @@ public class OrderServiceCreateTests
         var result = await service.CreateOrderAsync(customer.Id, Array.Empty<NewOrderLine>());
 
         Assert.False(result.Success);
+        Assert.Equal("訂單至少需要一項商品", result.ErrorMessage);
     }
 
     [Fact]
@@ -101,6 +102,7 @@ public class OrderServiceCreateTests
         var result = await service.CreateOrderAsync(customer.Id, new[] { new NewOrderLine(product.Id, 0) });
 
         Assert.False(result.Success);
+        Assert.Equal("商品數量必須大於 0", result.ErrorMessage);
     }
 
     [Fact]
@@ -118,6 +120,38 @@ public class OrderServiceCreateTests
         });
 
         Assert.False(result.Success);
+        Assert.Equal("同一商品請勿重複加入，請調整數量即可", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task CreateOrder_UnknownCustomerAndEmptyLines_ReturnsCustomerNotFound()
+    {
+        using var db = TestSetup.CreateContext();
+        var service = TestSetup.CreateOrderService(db);
+
+        var result = await service.CreateOrderAsync(999, Array.Empty<NewOrderLine>());
+
+        Assert.False(result.Success);
+        Assert.Equal("找不到指定的客戶", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task CreateOrder_ValidThenUnknownProduct_DoesNotPersistOrderAndKeepsExistingStockEffect()
+    {
+        using var db = TestSetup.CreateContext();
+        var service = TestSetup.CreateOrderService(db);
+        var customer = TestSetup.AddCustomer(db);
+        var product = TestSetup.AddProduct(db, stock: 10);
+
+        var result = await service.CreateOrderAsync(customer.Id, new[]
+        {
+            new NewOrderLine(product.Id, 3),
+            new NewOrderLine(999, 1)
+        });
+
+        Assert.False(result.Success);
+        Assert.Empty(db.Orders);
+        Assert.Equal(7, db.Products.Single(p => p.Id == product.Id).StockQuantity);
     }
 
     [Fact]
