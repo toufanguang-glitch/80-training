@@ -8,7 +8,13 @@ using OrderHub.Core.Services;
 using OrderHub.Infrastructure.Data;
 using OrderHub.Infrastructure.Repositories;
 
-var builder = Host.CreateApplicationBuilder(args);
+// MCP clients may launch this process from any working directory, so anchor
+// config file discovery to the executable's own directory instead of cwd.
+var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory
+});
 
 // 重要:stdout 是 MCP 的協定通道,所有 log 一律走 stderr
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
