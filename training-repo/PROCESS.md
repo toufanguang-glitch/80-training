@@ -114,3 +114,45 @@ service 層,工具不重複實作)。
 destructive 標註接到確認流程上。換句話說:**真正的授權檢查不能只依賴
 annotation**,要做在 server/service 層——這正是這個練習的重點,而不是
 巧合地被印證了一次。
+
+## 練習 5 — Resources 與 Prompts
+
+`OrderHubResources.cs` 提供 `orderhub://discount-rules`(靜態 markdown 字串,
+折扣率照抄 `OrderService.GetDiscountRate` 的 Silver 5%/Gold 10%);
+`OrderHubPrompts.cs` 提供 `low_stock_report` prompt,套 `threshold` 參數展開
+成一段指示文字。兩個都用 Node MCP client 腳本驗證過
+(`resources/list`、`resources/read`、`prompts/list`、`prompts/get`),
+回傳內容和文件寫的一致。
+
+在 Claude Code 裡分工驗證:
+
+- **Resource**:`ListMcpResourcesTool`/`ReadMcpResourceTool`(對應 `@` 選取
+  背後的機制)讀到 `orderhub://discount-rules`,只用裡面的文字回答「Gold
+  會員買 1000 元商品應付多少?」→ 900 元(9 折)。不用碰 `OrderService.cs`
+  的程式碼就答對。
+- **Prompt**:`/mcp__orderhub__low_stock_report 5` 展開成文件寫的那段指示,
+  接著自動呼叫 `low_stock(threshold=5)`。但這裡碰到一個限制:prompt 要求
+  「再用其他工具了解這些商品的近期訂單狀況」,而 `orderhub` 目前的三個
+  工具(`get_order`/`low_stock`/`customer_orders`)裡沒有一個是「查某商品
+  的銷售歷史」——只好退回去用 `/Products/LowStock` 頁面現有的「近 30 天
+  售出數量」欄位(不是透過 MCP 工具拿到的)。
+
+**5c 反思**:
+
+1. 折扣規則用 Resource 給,和讓 agent 自己去讀 `OrderService.cs`:Resource
+   版不用理解程式碼結構、不用擔心讀到不相關的實作細節,agent 拿到的是
+   「已經整理過的答案」;代價是這份文字和 `GetDiscountRate` 的實際邏輯是
+   **兩份獨立的真相**——這次手動核對過是一致的,但 `OrderService` 改了
+   折扣率、忘了同步更新 resource 字串,agent 就會用舊規則算錯,而且不會
+   有任何錯誤訊息提示這件事。讀程式碼永遠不會過期,但每次都要重新理解;
+   Resource 快但有維護負擔。
+2. prompt 範本放在 server 端(`low_stock_report`),和每個人自己在對話裡
+   打一段類似的話:server 端版本團隊共用同一份措辭、進版本控制,規則變了
+   (例如採購表要多一欄)改一個地方全隊生效;每個人自己打字則是每次問法
+   可能不一樣,agent 的回答品質跟著問法品質浮動,而且沒有地方能一次改完
+   所有人的習慣用法。
+3. 這次順便發現:prompt 寫的分析步驟假設工具集「夠完整」(能查到商品的
+   訂單/銷售歷史),但實際上 `orderhub` 只有練習 1 設計的三個唯讀查詢,
+   完全沒有「依商品查訂單」這個角度。Prompt 範本本身不會檢查它引導的
+   步驟是否真的可執行——這是「什麼都做成 tool」地雷區的反面:工具集
+   不夠全面時,再好的 prompt 也只能讓 agent 找別的資料來源硬湊答案。
