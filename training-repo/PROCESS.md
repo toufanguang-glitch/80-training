@@ -87,3 +87,30 @@ dump。
    `"env": { "DOTNET_ENVIRONMENT": "Development" }` 才解決——這段可以放心
    進 git,「用 Development 環境」是通用設定,机器差異只在
    `appsettings.Development.json` 的實際連線字串裡(那份本來就不進 git)。
+
+## 練習 4 — cancel_order(會改資料的工具)
+
+三個唯讀工具補上 `[McpServerTool(ReadOnly = true)]`,新增
+`[McpServerTool(Destructive = true, Idempotent = false)]` 的 `cancel_order`,
+直接轉呼叫既有的 `OrderService.CancelOrderAsync`(狀態檢查、庫存回補都在
+service 層,工具不重複實作)。
+
+驗證(用同一支 Node MCP client 腳本,`tools/list` 讀 annotations、
+`tools/call` 實際跑一輪):
+
+- annotations 正確:三個唯讀工具 `readOnlyHint: true`;`cancel_order`
+  `destructiveHint: true, idempotentHint: false`
+- 訂單 #208(SKU-1007 ×3)取消成功,訊息「訂單 208 已取消,庫存已回補」,
+  `/Products` 上 SKU-1007 庫存確實從 49 回補到 52
+- 對同一筆訂單再取消一次:「取消失敗:狀態為 Cancelled 的訂單不可取消」
+  ——清楚的業務錯誤,不是 exception dump
+
+**改用真正的 agent 呼叫(不是腳本)重跑一次**,順便驗證權限確認提示這件事:
+開一筆新訂單(#209,SKU-1001 ×1),讓 Claude Code 直接呼叫
+`mcp__orderhub__cancel_order(id=209)`——**完全沒有跳出允許/拒絕的確認
+提示,直接執行成功**。這對照文件裡的地雷區提醒很貼切:annotations
+（`destructiveHint` 等)只是給 client 的 hint,不是強制規範;這台機器
+目前的權限設定顯然把 MCP tool call 當成已授權的操作,沒有額外把
+destructive 標註接到確認流程上。換句話說:**真正的授權檢查不能只依賴
+annotation**,要做在 server/service 層——這正是這個練習的重點,而不是
+巧合地被印證了一次。
