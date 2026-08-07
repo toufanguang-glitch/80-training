@@ -22,6 +22,28 @@
 - 使用者輸入用 DataAnnotations + ModelState 驗證；輸入錯誤絕不能變成 500
 - 金額一律用 `decimal`；折扣集中在 `OrderService.CalculateTotal`，不要在別處重算
 - 參考檔：Controller 照 `ProductsController.cs`、Service 照 `ProductService.cs` 的寫法
+- `OrderHub.Mcp`（`src/OrderHub.Mcp`）是第四個專案：獨立的 MCP server（console app），
+  直接參考 `OrderHub.Core` + `OrderHub.Infrastructure`，不經過 `OrderHub.Web`。
+  它有自己的 `appsettings.Development.json`（獨立連線字串，需與 Web 端保持同步）。
+
+## AI 訂單查詢（Gemini 自然語言搜尋）
+
+- 端點：`POST /api/orders/search`（`OrdersApiController`，JSON API）與
+  `GET /Orders/Search?q=`（`OrdersController.Search`，畫面版），body/query 都是 `{ text }` 一句話。
+- 流程：`OrderSearchService.SearchAsync` → `IOrderQueryTranslator.TranslateAsync`
+  （實作在 `GeminiOrderQueryTranslator`）呼叫 Gemini，把自然語言轉成結構化
+  `OrderSearchQuery`（status / memberTier / dateFrom / dateTo）→ `IOrderRepository.SearchAsync`。
+- 白名單防線（在程式碼裡，不只靠 prompt）：Gemini 回傳的 `intent` 必須是 `"search"`
+  且至少要有一個有效條件（`HasAnyFilter`），否則一律回 `422 無法理解的查詢`。
+  非查詢意圖（例如要求刪除/修改資料）會被分類成 `unsupported` 並同樣被拒絕——
+  且此端點本來就沒有任何刪改能力，就算模型誤判也無法造成破壞。
+- **相對日期一定要注入今天的日期**：prompt 樣板（`GeminiOrderQueryTranslator.PromptTemplate`）
+  用 `DateTime.Today` 換算「今天是 {0}」；沒有這行，「上個月/上週」這類相對時間會被模型
+  瞎猜成不相關的日期。修改 prompt 時務必保留這段。
+- 依賴 `Gemini:ApiKey`（來自 `dotnet user-secrets`，`UserSecretsId` 需為
+  `dd6219e7-ab3a-4c0b-9581-472abd7910ad`，或環境變數 `GEMINI_API_KEY`）。
+  金鑰遺失/`UserSecretsId` 對不上時，端點回 `503`（`AiServiceUnavailableException`），
+  其餘頁面不受影響。
 
 ## 常用指令
 
@@ -33,6 +55,9 @@
 
 - `src/OrderHub.Infrastructure/Migrations/**`：EF migration 是歷史紀錄，不要手改
 - `src/OrderHub.Web/appsettings.json`：連線字串等設定，改動前先問
+- `src/OrderHub.Web/OrderHub.Web.csproj` 的 `UserSecretsId`：改動或清空會讓
+  `Gemini:ApiKey` 讀不到（AI 搜尋變 503），且不會出現在 build 錯誤裡，只會在執行期才發現——
+  改動前先確認 `%APPDATA%\Microsoft\UserSecrets\` 底下對應的資料夾是否存在。
 
 ## Hooks
 
@@ -55,4 +80,4 @@
 - 不要未經同意就加新的 NuGet 套件
 - 不要在 Controller / Service 直接使用 DbContext
 - 不要為了「順手」重構與當前任務無關的程式碼
-- 不要讀取或寫入任何機密檔（*.pfx、appsettings.Production.json、user-secrets）
+- 不要讀取或寫入任何機密檔（appsettings.Production.json、user-secrets）
