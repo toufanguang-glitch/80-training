@@ -1,3 +1,4 @@
+using OrderHub.Core.Ai;
 using OrderHub.Core.Common;
 using OrderHub.Core.Domain;
 
@@ -15,4 +16,5 @@ public interface IOrderRepository
     Task<IReadOnlyList<Order>> GetByCustomerAsync(int customerId);
     Task AddAsync(Order order);
     Task SaveChangesAsync();
+    Task<IReadOnlyList<Order>> SearchAsync(OrderSearchQuery query);
 }
