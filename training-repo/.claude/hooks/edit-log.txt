@@ -3,3 +3,4 @@
 2026-08-07 12:06:58  Write  D:\AiProject\Training\80-training\training-repo\.claude\hooks\_test-scratch.txt
 2026-08-07 13:25:56  Edit  D:\AiProject\Training\80-training\training-repo\.claude\hooks\block-destructive-sql.ps1
 2026-08-07 13:30:10  Write  D:\AiProject\Training\80-training\training-repo\.claude\skills\fix-bug\SKILL.md
+2026-08-14 15:38:12  Edit  d:\AiProject\Training\80-training\training-repo\src\OrderHub.Mcp\OrderHub.Mcp.csproj
